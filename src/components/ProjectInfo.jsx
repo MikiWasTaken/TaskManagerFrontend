@@ -2,24 +2,113 @@ import {useEffect, useState} from "react";
 
 import api from "../api/axiosInstance.js";
 import TaskList from '../components/TaskList'
+import NewTaskForm from "./NewTaskForm.jsx";
 
 function ProjectInfo({ project }) {
 
-        const [todoCount, setTodoCount] = useState(null)
-        const [tasks, setTasks] = useState([])
+    const [todoCount, setTodoCount] = useState(null)
+    const [tasks, setTasks] = useState([])
+    const [showForm, setShowForm] = useState(false)
+    const [filterStatus, setFilterStatus] = useState('')
+    const [filterPriority, setFilterPriority] = useState('')
+    const [deadlineAfter, setDeadlineAfter] = useState('')
+    const [deadlineBefore, setDeadlineBefore] = useState('')
 
-        useEffect(() =>
-            {
-                api.get(`/api/projects/${project.id}/tasks`).then(response => setTasks(response.data))
-            },
-        [project.id])
 
-        useEffect(() =>
 
-         {api.get(`/api/projects/${project.id}/tasks?taskStatus=TODO`).then(res => setTodoCount(res.data.length))},[project.id])
+    function handleTaskCreated(newTask) {
+        setTasks(prevTasks => [...prevTasks, newTask])
+        setShowForm(false)
+    }
 
-    return (<div><h1>{project.name} - {project.description}, Status: {project.status}, Active tasks: {todoCount}</h1>
-        <TaskList tasks={tasks}/></div>)
+    function handleTaskUpdated(updatedTask) {
+        setTasks(prevTasks =>
+            prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+        )
+    }
+
+    function handleTaskDeleted(taskId)
+    {
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+    }
+
+
+
+    useEffect(() => {
+        api.get(`/api/projects/${project.id}/tasks`, {
+            params: {
+                taskStatus: filterStatus || undefined,
+                taskPriority: filterPriority || undefined,
+                deadlineAfter: deadlineAfter || undefined,
+                deadlineBefore: deadlineBefore || undefined
+            }
+        }).then(response => setTasks(response.data))
+    }, [project.id, filterStatus, filterPriority, deadlineAfter, deadlineBefore])
+
+
+    useEffect(() => {
+        api.get(`/api/projects/${project.id}/tasks?taskStatus=TODO`).then(res => setTodoCount(res.data.length))
+    }, [project.id])
+
+    return (<div>
+        <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm p-4 mb-6">
+            <h1 className="text-2xl font-semibold text-blue-800">{project.name}</h1>
+            <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+            <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                <span>Status: <span className="font-medium text-gray-700">{project.status}</span></span>
+                <span>Active tasks: <span className="font-medium text-gray-700">{todoCount}</span></span>
+            </div>
+        </div>
+        <button
+            onClick={() => setShowForm(prev => !prev)}
+            className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900 mb-4"
+        >
+            {showForm ? 'Cancel' : 'Add New Task'}
+        </button>
+
+        <div className="flex gap-3 mb-4">
+            <select
+                className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+            >
+                <option value="">All statuses</option>
+                <option value="TODO">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="DONE">Done</option>
+            </select>
+
+            <select
+                className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(e.target.value)}
+            >
+                <option value="">All priorities</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+            </select>
+
+            <input
+                type="datetime-local"
+                className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                value={deadlineAfter}
+                onChange={(e) => setDeadlineAfter(e.target.value)}
+            />
+            <input
+                type="datetime-local"
+                className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                value={deadlineBefore}
+                onChange={(e) => setDeadlineBefore(e.target.value)}
+            />
+        </div>
+
+
+
+        {showForm && <NewTaskForm projectId={project.id} onTaskCreated={handleTaskCreated}/>}
+        <TaskList tasks={tasks} projectId={project.id} onTaskUpdated={handleTaskUpdated} onTaskDeleted={handleTaskDeleted}/>
+
+    </div>)
 }
 
-export default ProjectInfo;
+export default ProjectInfo

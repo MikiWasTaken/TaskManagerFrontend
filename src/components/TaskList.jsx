@@ -1,18 +1,15 @@
-function TaskList({ tasks }) {
+import TaskCard from "./TaskCard.jsx";
+
+
+function TaskList({ tasks, projectId, onTaskUpdated, onTaskDeleted}) {
     return (
-        <div>
+        <div className="flex flex-col gap-4">
             {tasks.map((task) => (
-                <div key={task.id}>
-                    <p>{task.title}, {task.description}, Assignee {task.assignee}</p>
-                </div>
+                <TaskCard key={task.id} task={task} projectId={projectId} onTaskUpdated={onTaskUpdated} onTaskDeleted={onTaskDeleted} />
             ))}
-        </div>)
+        </div>
+    )
 }
 
 
 export default TaskList
-
-
-
-
-
