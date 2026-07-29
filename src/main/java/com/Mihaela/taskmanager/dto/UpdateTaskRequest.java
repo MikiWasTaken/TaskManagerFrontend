@@ -21,6 +21,8 @@ public class UpdateTaskRequest {
     private TaskStatus status;
     private TaskPriority priority;
     private UUID assigneeId;
+    private String assigneeFirstName;
+    private String assigneeLastName;
 
     @FutureOrPresent(message = "Deadline must be in the present or future")
     private LocalDateTime deadline;

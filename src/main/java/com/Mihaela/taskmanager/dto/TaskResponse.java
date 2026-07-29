@@ -18,8 +18,10 @@ public class TaskResponse {
     private LocalDateTime createdAt;
 
     private UUID projectId;
-    private UUID assignee;
+    private UUID assigneeId;
     private UUID createdBy;
+    private String assigneeFirstName;
+    private String assigneeLastName;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
     private LocalDateTime deadline;
@@ -37,8 +39,11 @@ public class TaskResponse {
         response.setUpdatedAt(task.getUpdatedAt());
         response.setDeadline(task.getDeadline());
 
-        if (task.getAssignedTo() != null)
-            response.setAssignee(task.getAssignedTo().getId());
+        if (task.getAssignedTo() != null) {
+            response.setAssigneeId(task.getAssignedTo().getId());
+            response.setAssigneeFirstName(task.getAssignedTo().getFirstName());
+            response.setAssigneeLastName(task.getAssignedTo().getLastName());
+        }
 
         return response;
     }
@@ -49,7 +54,7 @@ public class TaskResponse {
         response.setDeletedAt(task.getDeletedAt());
 
         if (task.getAssignedTo() != null)
-            response.setAssignee(task.getAssignedTo().getId());
+            response.setAssigneeId(task.getAssignedTo().getId());
 
         return response;
     }

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
-public class ProjectResponse {
+public class    ProjectResponse {
     private UUID id;
     private String name;
     private String description;
