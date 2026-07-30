@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import api from "../api/axiosInstance.js";
 
+
+//State - data that belongs to a component and can change over time
+//When state changes, the component re-renders with the new value
+
+
 const inputClasses = "border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
 
 function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {

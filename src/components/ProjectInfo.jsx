@@ -4,6 +4,15 @@ import api from "../api/axiosInstance.js";
 import TaskList from '../components/TaskList'
 import NewTaskForm from "./NewTaskForm.jsx";
 
+
+// ... is the spread operator.
+// if prevTasks had 3 items, this would be conceptually the same:
+// [...prevTasks, newTask] = [task1, task2, task3, newTask]
+// you MUST ALWAYS remake an array when something happens in it.
+// if you only mutate the array, its ID stays the same. To re-render you must create a new ID => a completely new array
+
+
+
 function ProjectInfo({ project }) {
 
     const [todoCount, setTodoCount] = useState(null)
