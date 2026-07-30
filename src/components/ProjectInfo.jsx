@@ -3,6 +3,10 @@ import {useEffect, useState} from "react";
 import api from "../api/axiosInstance.js";
 import TaskList from '../components/TaskList'
 import NewTaskForm from "./NewTaskForm.jsx";
+import ProjectMembers from "./ProjectMembers.jsx";
+import DocumentsPanel from "./DocumentsPanel.jsx";
+import ErrorBanner from "./ErrorBanner.jsx";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
 
 
 // ... is the spread operator.
@@ -13,7 +17,7 @@ import NewTaskForm from "./NewTaskForm.jsx";
 
 
 
-function ProjectInfo({ project }) {
+function ProjectInfo({ project, onProjectUpdated, onProjectDeleted }) {
 
     const [todoCount, setTodoCount] = useState(null)
     const [tasks, setTasks] = useState([])
@@ -23,7 +27,35 @@ function ProjectInfo({ project }) {
     const [deadlineAfter, setDeadlineAfter] = useState('')
     const [deadlineBefore, setDeadlineBefore] = useState('')
 
+    const [isEditingProject, setIsEditingProject] = useState(false)
+    const [name, setName] = useState(project.name)
+    const [description, setDescription] = useState(project.description)
+    const [status, setProjectStatus] = useState(project.status)
+    const [error, setError] = useState(null)
 
+    async function handleProjectSave(e) {
+        e.preventDefault()
+        setError(null)
+        try {
+            const response = await api.patch(`/api/projects/${project.id}`, { name, description, projectStatus: status })
+            onProjectUpdated(response.data)
+            setIsEditingProject(false)
+        } catch (err) {
+            setError(getErrorMessage(err))
+        }
+    }
+
+    async function handleProjectDelete() {
+        const confirmed = window.confirm("Delete this project? This cannot be undone.")
+        if (!confirmed) return
+        setError(null)
+        try {
+            await api.delete(`/api/projects/${project.id}`)
+            onProjectDeleted()
+        } catch (err) {
+            setError(getErrorMessage(err))
+        }
+    }
 
     function handleTaskCreated(newTask) {
         setTasks(prevTasks => [...prevTasks, newTask])
@@ -60,14 +92,71 @@ function ProjectInfo({ project }) {
     }, [project.id])
 
     return (<div>
-        <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm p-4 mb-6">
-            <h1 className="text-2xl font-semibold text-blue-800">{project.name}</h1>
-            <p className="text-sm text-gray-600 mt-1">{project.description}</p>
-            <div className="flex gap-4 mt-2 text-sm text-gray-600">
-                <span>Status: <span className="font-medium text-gray-700">{project.status}</span></span>
-                <span>Active tasks: <span className="font-medium text-gray-700">{todoCount}</span></span>
+        <ErrorBanner message={error} />
+
+        {isEditingProject ? (
+            <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm max-w-md p-4 mb-6">
+                <form onSubmit={handleProjectSave} className="flex flex-col gap-3">
+                    <input
+                        className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                    <input
+                        className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                    />
+                    <select
+                        className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-700"
+                        value={status}
+                        onChange={(e) => setProjectStatus(e.target.value)}
+                    >
+                        <option value="ACTIVE">Active</option>
+                        <option value="COMPLETE">Complete</option>
+                    </select>
+                    <div className="flex gap-2">
+                        <button type="submit" className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900">
+                            Save
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsEditingProject(false)}
+                            className="px-4 py-2 rounded text-sm text-gray-700 hover:bg-gray-200"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
+        ) : (
+            <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm p-4 mb-6">
+                <h1 className="text-2xl font-semibold text-blue-800">{project.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                    <span>Status: <span className="font-medium text-gray-700">{project.status}</span></span>
+                    <span>Active tasks: <span className="font-medium text-gray-700">{todoCount}</span></span>
+                </div>
+                <div className="flex gap-2 mt-3">
+                    <button
+                        onClick={() => setIsEditingProject(true)}
+                        className="px-4 py-2 rounded text-sm text-gray-700 hover:bg-gray-200"
+                    >
+                        Edit Project
+                    </button>
+                    <button
+                        onClick={handleProjectDelete}
+                        className="px-4 py-2 rounded text-sm text-red-700 hover:bg-red-100"
+                    >
+                        Delete Project
+                    </button>
+                </div>
+            </div>
+        )}
+
+        <ProjectMembers project={project} onProjectUpdated={onProjectUpdated} />
+        <DocumentsPanel projectId={project.id} />
+
         <button
             onClick={() => setShowForm(prev => !prev)}
             className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900 mb-4"
@@ -111,8 +200,6 @@ function ProjectInfo({ project }) {
                 onChange={(e) => setDeadlineBefore(e.target.value)}
             />
         </div>
-
-
 
         {showForm && <NewTaskForm projectId={project.id} onTaskCreated={handleTaskCreated}/>}
         <TaskList tasks={tasks} projectId={project.id} onTaskUpdated={handleTaskUpdated} onTaskDeleted={handleTaskDeleted}/>

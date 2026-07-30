@@ -1,5 +1,8 @@
 import {useEffect, useState} from "react";
 import api from "../api/axiosInstance.js";
+import ErrorBanner from "./ErrorBanner.jsx";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
+import { toApiDateTime } from "../utils/dateFormat.js";
 
 const inputClasses = "border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
 
@@ -9,6 +12,8 @@ function NewTaskForm({projectId, onTaskCreated}) {
     const [assigneeId, setAssigneeId] = useState('')
     const [priority, setPriority] = useState('MEDIUM')
     const [status, setStatus] = useState('TODO')
+    const [deadline, setDeadline] = useState('')
+    const [error, setError] = useState(null)
 
 
     const [members, setMembers] = useState([])
@@ -21,21 +26,32 @@ function NewTaskForm({projectId, onTaskCreated}) {
     async function handleSubmit(e)
     {
         e.preventDefault();
-        const response = await api.post(`/api/projects/${projectId}/tasks`, {title, description, assigneeId: assigneeId || null, priority: priority || "MEDIUM", status})
+        setError(null)
+        try {
+            const response = await api.post(`/api/projects/${projectId}/tasks`, {
+                title,
+                description,
+                assigneeId: assigneeId || null,
+                priority: priority || "MEDIUM",
+                status,
+                deadline: toApiDateTime(deadline)
+            })
 
-        onTaskCreated(response.data)
-        setTitle('')
-        setDescription('')
-        setAssigneeId('')
-        setPriority('MEDIUM')
-        setStatus('TODO')
-
-
-
+            onTaskCreated(response.data)
+            setTitle('')
+            setDescription('')
+            setAssigneeId('')
+            setPriority('MEDIUM')
+            setStatus('TODO')
+            setDeadline('')
+        } catch (err) {
+            setError(getErrorMessage(err))
+        }
     }
 
     return(
         <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm max-w-md p-4 mb-4">
+            <ErrorBanner message={error} />
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                 <input
                     className={inputClasses}
@@ -84,6 +100,12 @@ function NewTaskForm({projectId, onTaskCreated}) {
                     <option value="DONE">Done</option>
                 </select>
 
+                <input
+                    type="datetime-local"
+                    className={inputClasses}
+                    value={deadline}
+                    onChange={(e) => setDeadline(e.target.value)}
+                />
 
                 <button type="submit" className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900">
                     Add Task

@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import api from "../api/axiosInstance.js";
+import ErrorBanner from "./ErrorBanner.jsx";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
+import { toApiDateTime, toDatetimeLocalValue, formatDeadline } from "../utils/dateFormat.js";
 
 
 //State - data that belongs to a component and can change over time
 //When state changes, the component re-renders with the new value
+
 
 
 const inputClasses = "border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -16,6 +20,8 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
     const [assigneeId, setAssigneeId] = useState(task.assigneeId || '')
     const [members, setMembers] = useState([])
     const [status, setStatus] = useState(task.status)
+    const [deadline, setDeadline] = useState(toDatetimeLocalValue(task.deadline))
+    const [error, setError] = useState(null)
 
 
     useEffect(() => {
@@ -24,19 +30,25 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
 
     async function handleSubmit(e) {
         e.preventDefault()
+        setError(null)
 
         const assigneeChanged = assigneeId !== (task.assigneeId || '')
 
-        const response = await api.patch(`/api/projects/${projectId}/tasks/${task.id}`, {
-            title,
-            description,
-            priority,
-            status,
-            assigneeId: assigneeChanged ? (assigneeId || null) : undefined
-        })
+        try {
+            const response = await api.patch(`/api/projects/${projectId}/tasks/${task.id}`, {
+                title,
+                description,
+                priority,
+                status,
+                deadline: toApiDateTime(deadline),
+                assigneeId: assigneeChanged ? (assigneeId || null) : undefined
+            })
 
-        onTaskUpdated(response.data)
-        setIsEditing(false)
+            onTaskUpdated(response.data)
+            setIsEditing(false)
+        } catch (err) {
+            setError(getErrorMessage(err))
+        }
     }
 
 
@@ -45,8 +57,13 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
         const confirmed = window.confirm("Delete this task?")
         if (!confirmed) return
 
-        await api.delete(`/api/projects/${projectId}/tasks/${task.id}`)
-        onTaskDeleted(task.id)
+        setError(null)
+        try {
+            await api.delete(`/api/projects/${projectId}/tasks/${task.id}`)
+            onTaskDeleted(task.id)
+        } catch (err) {
+            setError(getErrorMessage(err))
+        }
     }
 
 
@@ -55,6 +72,7 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
     if (isEditing) {
         return (
             <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm max-w-md p-4">
+                <ErrorBanner message={error} />
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3">
                     <input
                         className={inputClasses}
@@ -101,6 +119,12 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
                         <option value="DONE">Done</option>
                     </select>
 
+                    <input
+                        type="datetime-local"
+                        className={inputClasses}
+                        value={deadline}
+                        onChange={(e) => setDeadline(e.target.value)}
+                    />
 
                     <div className="flex gap-2">
                         <button type="submit" className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900">
@@ -128,12 +152,14 @@ function TaskCard({ task, projectId, onTaskUpdated, onTaskDeleted}) {
 
     return (
         <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm max-w-md p-4">
+            <ErrorBanner message={error} />
             <h3 className="text-lg font-semibold text-blue-800">{task.title}</h3>
             <p className="text-sm text-gray-600">{task.description}</p>
             <p className="text-sm text-gray-600">
                 Assignee: {task.assigneeFirstName ? `${task.assigneeFirstName} ${task.assigneeLastName}` : "No assignee yet"}</p>
             <p className={`text-sm font-medium ${priorityColor}`}>Priority: {task.priority}</p>
             <p className="text-sm text-gray-600">Status: {task.status}</p>
+            <p className="text-sm text-gray-600">Deadline: {formatDeadline(task.deadline)}</p>
 
 
 

@@ -48,12 +48,14 @@ function DashboardPage() {
 
     return (
         <div>
-            <h1>Hi, {user.firstName} {user.lastName}</h1>
-            <p>Email: {user.email}</p>
-            <p>{user.role}</p>
-            <p>{user.active}</p>
-            <p>{user.createdAt}</p>
-            <button onClick={doSomething}>Load Projects</button>
+            <div className="bg-gray-100 border-l-4 border-blue-300 rounded shadow-sm max-w-md p-4 mb-6">
+                <h1 className="text-2xl font-semibold text-blue-800">Hi, {user.firstName} {user.lastName}</h1>
+                <p className="text-sm text-gray-600 mt-1">Email: {user.email}</p>
+                <p className="text-sm text-gray-600">Role: {user.role}</p>
+                <p className="text-sm text-gray-600">Active: {user.active ? 'Yes' : 'No'}</p>
+                <p className="text-sm text-gray-600">Joined: {user.createdAt}</p>
+            </div>
+            {/*<button onClick={doSomething} className="bg-blue-800 text-white px-4 py-2 rounded text-sm hover:bg-blue-900 mb-4">Load Projects</button>*/}
             {adminButton}
 
             <UserList users = {users}/>

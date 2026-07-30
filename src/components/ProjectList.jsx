@@ -1,17 +1,12 @@
-import {Link} from "react-router-dom";
+import ProjectCard from "./ProjectCard.jsx";
 
-function ProjectList({ projects }) {
-    return (
-        <div>
-            {projects.map((project) => (
-                <div key={project.id}>
-                    <Link to={`/projects/${project.id}`}>
-                        <p>{project.name} {project.description}</p>
-                    </Link>
-                </div>
-            ))}
-        </div>)}
+function ProjectList({projects})
+{
+    return (<div className="flex flex-col gap-4">
+        {projects.map(project => (
+            <ProjectCard key={project.id} project={project}/>
+        ))}
+    </div>)
+}
 
 export default ProjectList
-
-
